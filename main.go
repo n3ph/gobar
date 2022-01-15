@@ -31,23 +31,23 @@ func (elements Elements) write() {
 func main() {
 	var stdout Elements
 
-	host := host.Host{}
+	host := host.New()
 	hostDrift := make(chan bool)
 	go host.Update(hostDrift)
 
-	temperature := temperature.Temperature{}
+	temperature := temperature.New()
 	temperatureDrift := make(chan bool)
 	go temperature.Update(temperatureDrift)
 
-	battery := battery.Battery{}
+	battery := battery.New()
 	batteryDrift := make(chan bool)
 	go battery.Update(batteryDrift, "battery_BAT0")
 
-	volume := pulseaudio.Pulseaudio{}
+	volume := pulseaudio.New()
 	volumeDrift := make(chan bool)
 	go volume.Update(volumeDrift)
 
-	timestamp := timestamp.Timestamp{}
+	timestamp := timestamp.New()
 	timestampDrift := make(chan bool)
 	go timestamp.Update(timestampDrift)
 

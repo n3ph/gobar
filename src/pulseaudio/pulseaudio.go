@@ -15,6 +15,10 @@ type Pulseaudio struct {
 	mute  bool
 }
 
+func New() Pulseaudio {
+	return Pulseaudio{}
+}
+
 func (pa *Pulseaudio) Update(drift chan bool) {
 	client, err := pulseaudio.NewClient()
 	if err != nil {

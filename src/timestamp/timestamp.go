@@ -6,6 +6,10 @@ type Timestamp struct {
 	now time.Time
 }
 
+func New() Timestamp {
+	return Timestamp{}
+}
+
 func (timestamp *Timestamp) Update(drift chan bool) {
 	for range time.Tick(time.Second) {
 		timestamp.now = time.Now()

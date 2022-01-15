@@ -15,6 +15,10 @@ type Host struct {
 	load15 float64
 }
 
+func New() Host {
+	return Host{}
+}
+
 func (host *Host) Update(drift chan bool) {
 	for range time.Tick(time.Millisecond * 500) {
 		host_new := &Host{}

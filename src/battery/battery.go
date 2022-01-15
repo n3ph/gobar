@@ -13,6 +13,10 @@ type Battery struct {
 	stats upower.Update
 }
 
+func New() Battery {
+	return Battery{}
+}
+
 func (battery *Battery) Update(drift chan bool, device string) {
 	for range time.Tick(time.Millisecond * 250) {
 		upower, err := upower.New(device)

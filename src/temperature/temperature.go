@@ -13,6 +13,10 @@ type Temperature struct {
 	value float64
 }
 
+func New() Temperature {
+	return Temperature{}
+}
+
 func (temperature *Temperature) Update(drift chan bool) {
 	for range time.Tick(time.Second) {
 		temperature_new := &Temperature{}
