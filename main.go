@@ -11,11 +11,11 @@ import (
 )
 
 type Elements struct {
-	volume      string
 	battery     string
 	host        string
-	timestamp   string
 	temperature string
+	timestamp   string
+	volume      string
 }
 
 func (elements Elements) write() {
@@ -31,18 +31,6 @@ func (elements Elements) write() {
 func main() {
 	var stdout Elements
 
-	volume := pulseaudio.Pulseaudio{}
-	volumeDrift := make(chan bool)
-	go volume.Update(volumeDrift)
-
-	battery := battery.Battery{}
-	batteryDrift := make(chan bool)
-	go battery.Update(batteryDrift, "battery_BAT0")
-
-	timestamp := timestamp.Timestamp{}
-	timestampDrift := make(chan bool)
-	go timestamp.Update(timestampDrift)
-
 	host := host.Host{}
 	hostDrift := make(chan bool)
 	go host.Update(hostDrift)
@@ -51,8 +39,26 @@ func main() {
 	temperatureDrift := make(chan bool)
 	go temperature.Update(temperatureDrift)
 
+	battery := battery.Battery{}
+	batteryDrift := make(chan bool)
+	go battery.Update(batteryDrift, "battery_BAT0")
+
+	volume := pulseaudio.Pulseaudio{}
+	volumeDrift := make(chan bool)
+	go volume.Update(volumeDrift)
+
+	timestamp := timestamp.Timestamp{}
+	timestampDrift := make(chan bool)
+	go timestamp.Update(timestampDrift)
+
 	for {
 		select {
+		case <-hostDrift:
+			stdout.host = host.Get()
+			stdout.write()
+		case <-temperatureDrift:
+			stdout.temperature = temperature.Get()
+			stdout.write()
 		case <-batteryDrift:
 			stdout.battery = battery.Get()
 			stdout.write()
@@ -61,12 +67,6 @@ func main() {
 			stdout.write()
 		case <-timestampDrift:
 			stdout.timestamp = timestamp.Get()
-			stdout.write()
-		case <-hostDrift:
-			stdout.host = host.Get()
-			stdout.write()
-		case <-temperatureDrift:
-			stdout.temperature = temperature.Get()
 			stdout.write()
 		}
 	}
