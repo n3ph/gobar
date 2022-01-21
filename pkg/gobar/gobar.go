@@ -83,11 +83,12 @@ func Gobar() {
 			drift = true
 		}
 
+		// TODO: cleanup go routines before exit
+		// close(quitChan)
+
 		if drift {
 			stdout.write()
 			drift = false
 		}
 	}
-
-	close(quitChan)
 }
