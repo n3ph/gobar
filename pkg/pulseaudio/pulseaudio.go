@@ -19,7 +19,7 @@ func New() Pulseaudio {
 	return Pulseaudio{}
 }
 
-func (pa *Pulseaudio) Update(drift chan bool) {
+func (pa *Pulseaudio) Update(value chan string) {
 	client, err := pulseaudio.NewClient()
 	if err != nil {
 		panic(err)
@@ -41,7 +41,7 @@ func (pa *Pulseaudio) Update(drift chan bool) {
 		if !reflect.DeepEqual(pa, pa_new) {
 			pa.level = pa_new.level
 			pa.mute = pa_new.mute
-			drift <- true
+			value <- pa.Get()
 		}
 	}
 }

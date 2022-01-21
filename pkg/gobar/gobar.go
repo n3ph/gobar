@@ -1,11 +1,11 @@
-package main
+package gobar
 
 import (
 	"fmt"
 
-	"main/src/host"
-	"main/src/temperature"
-	"main/src/timestamp"
+	"github.com/n3ph/gobar/pkg/host"
+	"github.com/n3ph/gobar/pkg/temperature"
+	"github.com/n3ph/gobar/pkg/timestamp"
 )
 
 type Elements struct {
@@ -26,7 +26,7 @@ func (elements Elements) write() {
 	fmt.Println(stdout)
 }
 
-func main() {
+func Gobar() {
 	var stdout Elements
 	var drift bool
 
@@ -38,13 +38,13 @@ func main() {
 	temperatureValue := make(chan string)
 	go temperature.Update(temperatureValue)
 
-	battery := battery.New()
-	batteryValue := make(chan bool)
-	go battery.Update(batteryValue, "battery_BAT0")
+	// battery := battery.New()
+	// batteryValue := make(chan bool)
+	// go battery.Update(batteryValue, "battery_BAT0")
 
-	volume := pulseaudio.New()
-	volumeValue := make(chan bool)
-	go volume.Update(volumeValue)
+	// volume := pulseaudio.New()
+	// volumeValue := make(chan bool)
+	// go volume.Update(volumeValue)
 
 	timestamp := timestamp.New()
 	timestampValue := make(chan string)
@@ -58,12 +58,12 @@ func main() {
 		case value := <-temperatureValue:
 			stdout.temperature = value
 			drift = true
-		case value := <-batteryValue:
-			stdout.battery = value
-			drift = true
-		case value := <-volumeValue:
-			stdout.volume = value
-			drift = true
+		// case value := <-batteryValue:
+		// 	stdout.battery = value
+		// 	drift = true
+		// case value := <-volumeValue:
+		// 	stdout.volume = value
+		// 	drift = true
 		case value := <-timestampValue:
 			stdout.timestamp = value
 			drift = true

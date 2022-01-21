@@ -17,21 +17,21 @@ func New() Battery {
 	return Battery{}
 }
 
-func (battery *Battery) Update(drift chan bool, device string) {
+func (battery *Battery) Update(value chan string, device string) {
 	for range time.Tick(time.Millisecond * 250) {
-		upower, err := upower.New(device)
+		upower, err := upower.NewBattery(device)
 		if err != nil {
 			panic(err)
 		}
 
-		stats, err := upower.Get()
+		stats, err := upower.GetBattery()
 		if err != nil {
 			panic(err)
 		}
 
 		if !reflect.DeepEqual(stats, battery.stats) {
 			battery.stats = stats
-			drift <- true
+			value <- battery.Get()
 		}
 	}
 }

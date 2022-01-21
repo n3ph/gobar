@@ -1,4 +1,4 @@
-module main
+module github.com/n3ph/gobar
 
 go 1.17
 
