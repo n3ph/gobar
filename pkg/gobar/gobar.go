@@ -2,11 +2,15 @@ package gobar
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/n3ph/gobar/pkg/host"
 	"github.com/n3ph/gobar/pkg/temperature"
-	"github.com/n3ph/gobar/pkg/timestamp"
 )
+
+func getTimestamp() string {
+	return time.Now().Format("02.01.2006 15:04:05.0000")
+}
 
 type Elements struct {
 	battery     string
@@ -19,7 +23,7 @@ type Elements struct {
 func (elements Elements) write() {
 	var stdout string
 
-	for _, element := range []string{elements.host, elements.temperature, elements.battery, elements.volume, elements.timestamp} {
+	for _, element := range []string{elements.host, elements.temperature, elements.battery, elements.volume, getTimestamp()} {
 		stdout += element + " | "
 	}
 
@@ -46,10 +50,6 @@ func Gobar() {
 	// volumeValue := make(chan bool)
 	// go volume.Update(volumeValue)
 
-	timestamp := timestamp.New()
-	timestampValue := make(chan string)
-	go timestamp.Update(timestampValue)
-
 	for {
 		select {
 		case value := <-hostValue:
@@ -64,8 +64,7 @@ func Gobar() {
 		// case value := <-volumeValue:
 		// 	stdout.volume = value
 		// 	drift = true
-		case value := <-timestampValue:
-			stdout.timestamp = value
+		case <-time.Tick(time.Second):
 			drift = true
 		}
 
