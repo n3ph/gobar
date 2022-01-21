@@ -2,126 +2,72 @@ package main
 
 import (
 	"fmt"
-	"math"
-	"time"
 
-	"github.com/mafik/pulseaudio"
-	"github.com/omeid/upower-notify/upower"
-	"github.com/shirou/gopsutil/host"
-	"github.com/shirou/gopsutil/load"
+	"main/src/battery"
+	"main/src/host"
+	"main/src/pulseaudio"
+	"main/src/temperature"
+	"main/src/timestamp"
 )
 
-func date() string {
-	currentTime := time.Now()
-	return currentTime.Format("02.01.2006 15:04:05")
+type Elements struct {
+	battery     string
+	host        string
+	temperature string
+	timestamp   string
+	volume      string
 }
 
-func volume() string {
-	paClient, err := pulseaudio.NewClient()
-	if err != nil {
-		panic(err)
-	}
-	defer paClient.Close()
-
-	volumeFloat, err := paClient.Volume()
-	if err != nil {
-		panic(err)
-	}
-	volumeStr := fmt.Sprintf("%.f", math.Ceil(float64(volumeFloat)*100)) + "%"
-
-	mute, err := paClient.Mute()
-	if err != nil {
-		panic(err)
-	}
-
-	var volumeIcon string
-	switch {
-	case volumeFloat > 0.8:
-		volumeIcon = "🔊"
-	case volumeFloat > 0.4:
-		volumeIcon = "🔉"
-	case volumeFloat > 0.2:
-		volumeIcon = "🔈"
-	case volumeFloat == 0:
-		volumeIcon = "🔇"
-	}
-	if mute {
-		volumeIcon = "🔇"
-	}
-
-	return volumeIcon + " " + volumeStr
-}
-
-func avgLoad() string {
-	loadAvg, err := load.Avg()
-	if err != nil {
-		panic(err)
-	}
-
-	load1 := fmt.Sprintf("%.2f", loadAvg.Load1)
-	load5 := fmt.Sprintf("%.2f", loadAvg.Load5)
-	load15 := fmt.Sprintf("%.2f", loadAvg.Load15)
-
-	return load1 + " " + load5 + " " + load15
-}
-
-func temp() string {
-	sensors, err := host.SensorsTemperatures()
-	if err != nil {
-		panic(err)
-	}
-
-	var tempStr string
-	for _, sensor := range sensors {
-		if sensor.SensorKey == "amdgpu_edge_input" {
-			tempStr = fmt.Sprintf("%.f", sensor.Temperature) + "°C"
-		}
-	}
-
-	tempIcon := "🌡️"
-	return tempIcon + " " + tempStr
-}
-
-func battery() string {
-	up, err := upower.New("battery_BAT0")
-	if err != nil {
-		panic(err)
-	}
-
-	status, err := up.Get()
-	if err != nil {
-		panic(err)
-	}
-
-	batteryStr := fmt.Sprintf("%.f", status.Percentage) + "%"
-	var batteryIcon string
-
-	if status.Percentage < 0.3 {
-		batteryIcon = "🪫"
-	} else {
-		batteryIcon = "🔋"
-	}
-
-	switch status.State {
-	case 0: // unknown
-		batteryIcon = "❓"
-	case 1: // charging
-		batteryIcon = "🔌" + batteryIcon
-	case 3: // empty
-		batteryIcon = "💔"
-	case 4: // fully charged
-		batteryIcon = "🔌"
-	}
-
-	return batteryIcon + " " + batteryStr
-}
-
-func main() {
+func (elements Elements) write() {
 	var stdout string
-	elements := []string{avgLoad(), temp(), battery(), volume(), date()}
-	for _, element := range elements {
+
+	for _, element := range []string{elements.host, elements.temperature, elements.battery, elements.volume, elements.timestamp} {
 		stdout += element + " | "
 	}
 
 	fmt.Println(stdout)
+}
+
+func main() {
+	var stdout Elements
+
+	host := host.New()
+	hostDrift := make(chan bool)
+	go host.Update(hostDrift)
+
+	temperature := temperature.New()
+	temperatureDrift := make(chan bool)
+	go temperature.Update(temperatureDrift)
+
+	battery := battery.New()
+	batteryDrift := make(chan bool)
+	go battery.Update(batteryDrift, "battery_BAT0")
+
+	volume := pulseaudio.New()
+	volumeDrift := make(chan bool)
+	go volume.Update(volumeDrift)
+
+	timestamp := timestamp.New()
+	timestampDrift := make(chan bool)
+	go timestamp.Update(timestampDrift)
+
+	for {
+		select {
+		case <-hostDrift:
+			stdout.host = host.Get()
+			stdout.write()
+		case <-temperatureDrift:
+			stdout.temperature = temperature.Get()
+			stdout.write()
+		case <-batteryDrift:
+			stdout.battery = battery.Get()
+			stdout.write()
+		case <-volumeDrift:
+			stdout.volume = volume.Get()
+			stdout.write()
+		case <-timestampDrift:
+			stdout.timestamp = timestamp.Get()
+			stdout.write()
+		}
+	}
 }
