@@ -3,9 +3,7 @@ package main
 import (
 	"fmt"
 
-	"main/src/battery"
 	"main/src/host"
-	"main/src/pulseaudio"
 	"main/src/temperature"
 	"main/src/timestamp"
 )
@@ -30,44 +28,50 @@ func (elements Elements) write() {
 
 func main() {
 	var stdout Elements
+	var drift bool
 
 	host := host.New()
-	hostDrift := make(chan bool)
-	go host.Update(hostDrift)
+	hostValue := make(chan string)
+	go host.Update(hostValue)
 
 	temperature := temperature.New()
-	temperatureDrift := make(chan bool)
-	go temperature.Update(temperatureDrift)
+	temperatureValue := make(chan string)
+	go temperature.Update(temperatureValue)
 
 	battery := battery.New()
-	batteryDrift := make(chan bool)
-	go battery.Update(batteryDrift, "battery_BAT0")
+	batteryValue := make(chan bool)
+	go battery.Update(batteryValue, "battery_BAT0")
 
 	volume := pulseaudio.New()
-	volumeDrift := make(chan bool)
-	go volume.Update(volumeDrift)
+	volumeValue := make(chan bool)
+	go volume.Update(volumeValue)
 
 	timestamp := timestamp.New()
-	timestampDrift := make(chan bool)
-	go timestamp.Update(timestampDrift)
+	timestampValue := make(chan string)
+	go timestamp.Update(timestampValue)
 
 	for {
 		select {
-		case <-hostDrift:
-			stdout.host = host.Get()
+		case value := <-hostValue:
+			stdout.host = value
+			drift = true
+		case value := <-temperatureValue:
+			stdout.temperature = value
+			drift = true
+		case value := <-batteryValue:
+			stdout.battery = value
+			drift = true
+		case value := <-volumeValue:
+			stdout.volume = value
+			drift = true
+		case value := <-timestampValue:
+			stdout.timestamp = value
+			drift = true
+		}
+
+		if drift {
 			stdout.write()
-		case <-temperatureDrift:
-			stdout.temperature = temperature.Get()
-			stdout.write()
-		case <-batteryDrift:
-			stdout.battery = battery.Get()
-			stdout.write()
-		case <-volumeDrift:
-			stdout.volume = volume.Get()
-			stdout.write()
-		case <-timestampDrift:
-			stdout.timestamp = timestamp.Get()
-			stdout.write()
+			drift = false
 		}
 	}
 }

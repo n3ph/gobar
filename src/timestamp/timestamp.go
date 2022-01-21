@@ -10,10 +10,10 @@ func New() Timestamp {
 	return Timestamp{}
 }
 
-func (timestamp *Timestamp) Update(drift chan bool) {
+func (timestamp *Timestamp) Update(value chan string) {
 	for range time.Tick(time.Second) {
 		timestamp.now = time.Now()
-		drift <- true
+		value <- timestamp.Get()
 	}
 }
 

@@ -17,7 +17,7 @@ func New() Temperature {
 	return Temperature{}
 }
 
-func (temperature *Temperature) Update(drift chan bool) {
+func (temperature *Temperature) Update(drift chan string) {
 	for range time.Tick(time.Second) {
 		temperature_new := &Temperature{}
 		sensors, err := host.SensorsTemperatures()
@@ -33,7 +33,7 @@ func (temperature *Temperature) Update(drift chan bool) {
 
 		if !reflect.DeepEqual(temperature, temperature_new) {
 			temperature.value = temperature_new.value
-			drift <- true
+			drift <- temperature.Get()
 		}
 	}
 }

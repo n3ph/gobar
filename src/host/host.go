@@ -19,7 +19,7 @@ func New() Host {
 	return Host{}
 }
 
-func (host *Host) Update(drift chan bool) {
+func (host *Host) Update(drift chan string) {
 	for range time.Tick(time.Millisecond * 500) {
 		host_new := &Host{}
 		loadAvg, err := load.Avg()
@@ -34,7 +34,7 @@ func (host *Host) Update(drift chan bool) {
 			host.load1 = host_new.load1
 			host.load5 = host_new.load5
 			host.load15 = host_new.load15
-			drift <- true
+			drift <- host.Get()
 		}
 	}
 }
