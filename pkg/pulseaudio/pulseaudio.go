@@ -19,34 +19,40 @@ func New() Pulseaudio {
 	return Pulseaudio{}
 }
 
-func (pa *Pulseaudio) Update(value chan string) {
+func (pa *Pulseaudio) Update(quitChan chan struct{}, valueChan chan string, errChan chan error) {
 	client, err := pulseaudio.NewClient()
 	if err != nil {
-		panic(err)
+		errChan <- err
+		return
 	}
 	defer client.Close()
 
 	for range time.Tick(time.Millisecond * 250) {
-		var err error
-		pa_new := &Pulseaudio{}
-		pa_new.level, err = client.Volume()
-		if err != nil {
-			panic(err)
-		}
-		pa_new.mute, err = client.Mute()
-		if err != nil {
-			panic(err)
-		}
+		select {
+		case <-quitChan:
+			return
+		default:
+			var err error
+			pa_new := &Pulseaudio{}
+			pa_new.level, err = client.Volume()
+			if err != nil {
+				return
+			}
+			pa_new.mute, err = client.Mute()
+			if err != nil {
+				return
+			}
 
-		if !reflect.DeepEqual(pa, pa_new) {
-			pa.level = pa_new.level
-			pa.mute = pa_new.mute
-			value <- pa.Get()
+			if !reflect.DeepEqual(pa, pa_new) {
+				pa.level = pa_new.level
+				pa.mute = pa_new.mute
+				valueChan <- pa.str()
+			}
 		}
 	}
 }
 
-func (pa *Pulseaudio) Get() (output string) {
+func (pa *Pulseaudio) str() (output string) {
 	volumeStr := fmt.Sprintf("%.f", math.Ceil(float64(pa.level)*100)) + "%"
 
 	var volumeIcon string

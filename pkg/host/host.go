@@ -19,27 +19,33 @@ func New() Host {
 	return Host{}
 }
 
-func (host *Host) Update(drift chan string) {
+func (host *Host) Update(quitChan chan struct{}, valueChan chan string, errChan chan error) {
 	for range time.Tick(time.Millisecond * 500) {
-		host_new := &Host{}
-		loadAvg, err := load.Avg()
-		if err != nil {
-			panic(err)
-		}
-		host_new.load1 = loadAvg.Load1
-		host_new.load5 = loadAvg.Load5
-		host_new.load15 = loadAvg.Load15
+		select {
+		case <-quitChan:
+			return
+		default:
+			host_new := &Host{}
+			loadAvg, err := load.Avg()
+			if err != nil {
+				errChan <- err
+				return
+			}
+			host_new.load1 = loadAvg.Load1
+			host_new.load5 = loadAvg.Load5
+			host_new.load15 = loadAvg.Load15
 
-		if !reflect.DeepEqual(host, host_new) {
-			host.load1 = host_new.load1
-			host.load5 = host_new.load5
-			host.load15 = host_new.load15
-			drift <- host.Get()
+			if !reflect.DeepEqual(host, host_new) {
+				host.load1 = host_new.load1
+				host.load5 = host_new.load5
+				host.load15 = host_new.load15
+				valueChan <- host.str()
+			}
 		}
 	}
 }
 
-func (host *Host) Get() string {
+func (host *Host) str() string {
 	load1Str := fmt.Sprintf("%.2f", host.load1)
 	load5Str := fmt.Sprintf("%.2f", host.load5)
 	load15Str := fmt.Sprintf("%.2f", host.load15)

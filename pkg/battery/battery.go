@@ -10,33 +10,42 @@ import (
 )
 
 type Battery struct {
-	stats upower.Update
+	device string
+	stats  upower.Update
 }
 
-func New() Battery {
+func New(device string) (battery Battery) {
+	battery.device = device
 	return Battery{}
 }
 
-func (battery *Battery) Update(value chan string, device string) {
+func (battery *Battery) Update(quitChan chan struct{}, valueChan chan string, errChan chan error) {
 	for range time.Tick(time.Millisecond * 250) {
-		upower, err := upower.NewBattery(device)
-		if err != nil {
-			panic(err)
-		}
+		select {
+		case <-quitChan:
+			return
+		default:
+			upower, err := upower.New(battery.device)
+			if err != nil {
+				errChan <- err
+				return
+			}
 
-		stats, err := upower.GetBattery()
-		if err != nil {
-			panic(err)
-		}
+			stats, err := upower.Get()
+			if err != nil {
+				errChan <- err
+				return
+			}
 
-		if !reflect.DeepEqual(stats, battery.stats) {
-			battery.stats = stats
-			value <- battery.Get()
+			if !reflect.DeepEqual(stats, battery.stats) {
+				battery.stats = stats
+				valueChan <- battery.str()
+			}
 		}
 	}
 }
 
-func (battery *Battery) Get() string {
+func (battery *Battery) str() string {
 	batteryStr := fmt.Sprintf("%.f", battery.stats.Percentage) + "%"
 
 	var batteryIcon, batteryStatusIcon string

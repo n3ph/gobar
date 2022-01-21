@@ -10,35 +10,46 @@ import (
 )
 
 type Temperature struct {
-	value float64
+	device string
+	value  float64
 }
 
-func New() Temperature {
-	return Temperature{}
+func New(device string) (temperature Temperature) {
+	temperature.device = device
+	return
 }
 
-func (temperature *Temperature) Update(drift chan string) {
+func (temperature *Temperature) Update(quitChan chan struct{}, valueChan chan string, errChan chan error) {
 	for range time.Tick(time.Second) {
-		temperature_new := &Temperature{}
-		sensors, err := host.SensorsTemperatures()
-		if err != nil {
-			panic(err)
-		}
-
-		for _, sensor := range sensors {
-			if sensor.SensorKey == "amdgpu_edge_input" {
-				temperature_new.value = sensor.Temperature
+		select {
+		case <-quitChan:
+			return
+		default:
+			temperature_new := &Temperature{}
+			sensors, err := host.SensorsTemperatures()
+			if err != nil {
+				errChan <- err
+				return
 			}
-		}
 
-		if !reflect.DeepEqual(temperature, temperature_new) {
-			temperature.value = temperature_new.value
-			drift <- temperature.Get()
+			for _, sensor := range sensors {
+				if sensor.SensorKey == temperature.device {
+					temperature_new.value = sensor.Temperature
+				} else {
+					errChan <- fmt.Errorf("get temperature stats: device not found: %s", temperature.device)
+					return
+				}
+			}
+
+			if !reflect.DeepEqual(temperature, temperature_new) {
+				temperature.value = temperature_new.value
+				valueChan <- temperature.str()
+			}
 		}
 	}
 }
 
-func (temperature *Temperature) Get() string {
+func (temperature *Temperature) str() string {
 	temperatureStr := fmt.Sprintf("%.f", temperature.value) + "°C"
 	temperatureIcon := "🌡️"
 
