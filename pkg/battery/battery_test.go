@@ -2,20 +2,37 @@ package battery
 
 import (
 	"reflect"
+	"runtime"
 	"testing"
+
+	"github.com/omeid/upower-notify/upower"
 )
 
 func TestNew(t *testing.T) {
+	type args struct {
+		device string
+	}
 	tests := []struct {
-		name string
-		want Battery
+		name        string
+		args        args
+		wantBattery Battery
+		wantErr     bool
 	}{
-		// TODO: Add test cases.
+		{"emptyStr", args{device: ""}, Battery{device: &upower.UPower{}, stats: upower.Update{}}, true},
+		{"dummyDevice", args{device: "dummyDevice"}, Battery{device: &upower.UPower{}, stats: upower.Update{}}, false},
 	}
 	for _, tt := range tests {
+		if runtime.GOOS != "linux" {
+			t.Skip("Skipping tests for linux based upower/dbus implementation")
+		}
 		t.Run(tt.name, func(t *testing.T) {
-			if got := New(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("New() = %v, want %v", got, tt.want)
+			gotBattery, err := New(tt.args.device)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotBattery, tt.wantBattery) {
+				t.Errorf("New() = %v, want %v", gotBattery, tt.wantBattery)
 			}
 		})
 	}
@@ -23,24 +40,44 @@ func TestNew(t *testing.T) {
 
 func TestBattery_Update(t *testing.T) {
 	type args struct {
-		value  chan string
-		device string
+		quitChan  chan struct{}
+		valueChan chan string
+		errChan   chan error
 	}
+
+	battery, err := New("dummy")
+	if err != nil {
+		t.Errorf("nonoo")
+	}
+	param := args{}
+	param.quitChan = make(chan struct{})
+	param.valueChan = make(chan string)
+	param.errChan = make(chan error)
+
 	tests := []struct {
 		name    string
 		battery *Battery
 		args    args
 	}{
-		// TODO: Add test cases.
+		{"dummy123", &battery, param},
 	}
 	for _, tt := range tests {
+		if runtime.GOOS != "linux" {
+			t.Skip("Skipping tests for linux based upower/dbus implementation")
+		}
 		t.Run(tt.name, func(t *testing.T) {
-			tt.battery.Update(tt.args.value, tt.args.device)
+			go tt.battery.Update(tt.args.quitChan, tt.args.valueChan, tt.args.errChan)
 		})
+
+		select {
+		case err := <-tt.args.errChan:
+			t.Error(err)
+		}
+		close(tt.args.quitChan)
 	}
 }
 
-func TestBattery_Get(t *testing.T) {
+func TestBattery_str(t *testing.T) {
 	tests := []struct {
 		name    string
 		battery *Battery
@@ -50,8 +87,8 @@ func TestBattery_Get(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.battery.Get(); got != tt.want {
-				t.Errorf("Battery.Get() = %v, want %v", got, tt.want)
+			if got := tt.battery.str(); got != tt.want {
+				t.Errorf("Battery.str() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -47,7 +47,10 @@ func Gobar() {
 	temperatureErrChan := make(chan error)
 	go temperature.Update(quitChan, temperatureValueChan, temperatureErrChan)
 
-	battery := battery.New("battery_BAT0")
+	battery, err := battery.New("battery_BAT0")
+	if err != nil {
+		panic(err)
+	}
 	batteryValueChan := make(chan string)
 	batteryErrChan := make(chan error)
 	go battery.Update(quitChan, batteryValueChan, batteryErrChan)

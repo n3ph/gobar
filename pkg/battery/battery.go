@@ -10,13 +10,19 @@ import (
 )
 
 type Battery struct {
-	device string
+	device *upower.UPower
 	stats  upower.Update
 }
 
-func New(device string) (battery Battery) {
-	battery.device = device
-	return Battery{}
+func New(device string) (battery Battery, err error) {
+	if len(device) > 0 {
+		battery.device, err = upower.New(device)
+		if err != nil {
+			return Battery{}, err
+		}
+		return battery, nil
+	}
+	return Battery{}, fmt.Errorf("BUG: device is empty string")
 }
 
 func (battery *Battery) Update(quitChan chan struct{}, valueChan chan string, errChan chan error) {
@@ -25,13 +31,7 @@ func (battery *Battery) Update(quitChan chan struct{}, valueChan chan string, er
 		case <-quitChan:
 			return
 		default:
-			upower, err := upower.New(battery.device)
-			if err != nil {
-				errChan <- err
-				return
-			}
-
-			stats, err := upower.Get()
+			stats, err := battery.device.Get()
 			if err != nil {
 				errChan <- err
 				return
