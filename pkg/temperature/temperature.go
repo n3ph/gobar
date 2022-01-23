@@ -2,7 +2,6 @@ package temperature
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
@@ -10,40 +9,37 @@ import (
 )
 
 type Temperature struct {
-	device string
+	sensor host.TemperatureStat
 	value  float64
 }
 
-func New(device string) (temperature Temperature) {
-	temperature.device = device
+func New(device string) (temperature Temperature, err error) {
+	sensors, err := host.SensorsTemperatures()
+	if err != nil {
+		return Temperature{}, err
+	}
+
+	for _, sensor := range sensors {
+		if sensor.SensorKey == device {
+			temperature.sensor = sensor
+			return
+		}
+	}
+	err = fmt.Errorf("get temperature stats: device not found: %s", device)
 	return
 }
 
-func (temperature *Temperature) Update(quitChan chan struct{}, valueChan chan string, errChan chan error) {
-	for range time.Tick(time.Second) {
+func (temperature *Temperature) Update(quit chan struct{}, duration time.Duration, value chan string, err chan error) {
+	for range time.Tick(duration) {
 		select {
-		case <-quitChan:
+		case <-quit:
 			return
 		default:
-			temperature_new := &Temperature{}
-			sensors, err := host.SensorsTemperatures()
-			if err != nil {
-				errChan <- err
-				return
-			}
-
-			for _, sensor := range sensors {
-				if sensor.SensorKey == temperature.device {
-					temperature_new.value = sensor.Temperature
-				} else {
-					errChan <- fmt.Errorf("get temperature stats: device not found: %s", temperature.device)
-					return
-				}
-			}
-
-			if !reflect.DeepEqual(temperature, temperature_new) {
+			temperature_new := Temperature{}
+			temperature_new.value = temperature.sensor.Temperature
+			if temperature.value != temperature_new.value {
 				temperature.value = temperature_new.value
-				valueChan <- temperature.str()
+				value <- temperature.str()
 			}
 		}
 	}

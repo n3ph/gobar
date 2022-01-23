@@ -3,7 +3,6 @@ package pulseaudio
 import (
 	"fmt"
 	"math"
-	"reflect"
 	"strings"
 	"time"
 
@@ -11,42 +10,46 @@ import (
 )
 
 type Pulseaudio struct {
-	level float32
-	mute  bool
+	level  float32
+	mute   bool
+	client *pulseaudio.Client
 }
 
-func New() Pulseaudio {
-	return Pulseaudio{}
-}
-
-func (pa *Pulseaudio) Update(quitChan chan struct{}, valueChan chan string, errChan chan error) {
+func New() (pa Pulseaudio, err error) {
 	client, err := pulseaudio.NewClient()
 	if err != nil {
-		errChan <- err
-		return
+		return pa, err
 	}
-	defer client.Close()
+
+	pa.client = client
+	return pa, nil
+}
+
+func (pa *Pulseaudio) Update(quit chan struct{}, duration time.Duration, value chan string, err chan error) {
 
 	for range time.Tick(time.Millisecond * 250) {
 		select {
-		case <-quitChan:
+		case <-quit:
 			return
 		default:
-			var err error
+
+			var _err error
 			pa_new := &Pulseaudio{}
-			pa_new.level, err = client.Volume()
-			if err != nil {
+			pa_new.level, _err = pa.client.Volume()
+			if _err != nil {
+				err <- _err
 				return
 			}
-			pa_new.mute, err = client.Mute()
-			if err != nil {
+			pa_new.mute, _err = pa.client.Mute()
+			if _err != nil {
+				err <- _err
 				return
 			}
 
-			if !reflect.DeepEqual(pa, pa_new) {
+			if pa.level != pa_new.level || pa.mute != pa_new.mute {
 				pa.level = pa_new.level
 				pa.mute = pa_new.mute
-				valueChan <- pa.str()
+				value <- pa.str()
 			}
 		}
 	}

@@ -3,19 +3,30 @@ package temperature
 import (
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestNew(t *testing.T) {
+	type args struct {
+		device string
+	}
 	tests := []struct {
-		name string
-		want Temperature
+		name            string
+		args            args
+		wantTemperature Temperature
+		wantErr         bool
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := New(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("New() = %v, want %v", got, tt.want)
+			gotTemperature, err := New(tt.args.device)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotTemperature, tt.wantTemperature) {
+				t.Errorf("New() = %v, want %v", gotTemperature, tt.wantTemperature)
 			}
 		})
 	}
@@ -23,7 +34,10 @@ func TestNew(t *testing.T) {
 
 func TestTemperature_Update(t *testing.T) {
 	type args struct {
-		drift chan string
+		quit     chan struct{}
+		duration time.Duration
+		value    chan string
+		err      chan error
 	}
 	tests := []struct {
 		name        string
@@ -34,12 +48,12 @@ func TestTemperature_Update(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.temperature.Update(tt.args.drift)
+			tt.temperature.Update(tt.args.quit, tt.args.duration, tt.args.value, tt.args.err)
 		})
 	}
 }
 
-func TestTemperature_Get(t *testing.T) {
+func TestTemperature_str(t *testing.T) {
 	tests := []struct {
 		name        string
 		temperature *Temperature
@@ -49,8 +63,8 @@ func TestTemperature_Get(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.temperature.Get(); got != tt.want {
-				t.Errorf("Temperature.Get() = %v, want %v", got, tt.want)
+			if got := tt.temperature.str(); got != tt.want {
+				t.Errorf("Temperature.str() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -32,62 +32,87 @@ func (elements Elements) write() {
 	fmt.Println(stdout)
 }
 
+type args struct {
+	duration time.Duration
+	value    chan string
+	err      chan error
+}
+
 func Gobar() {
 	var stdout Elements
 	var drift bool
 	quitChan := make(chan struct{})
 
 	host := host.New()
-	hostValueChan := make(chan string)
-	hostErrChan := make(chan error)
-	go host.Update(quitChan, hostValueChan, hostErrChan)
+	hostArgs := args{}
+	hostArgs.duration = time.Millisecond * 250
+	hostArgs.value = make(chan string)
+	hostArgs.err = make(chan error)
+	go host.Update(quitChan, hostArgs.duration, hostArgs.value, hostArgs.err)
 
-	temperature := temperature.New("amdgpu_edge_input")
-	temperatureValueChan := make(chan string)
-	temperatureErrChan := make(chan error)
-	go temperature.Update(quitChan, temperatureValueChan, temperatureErrChan)
+	temperature, err := temperature.New("amdgpu_edge_input")
+	if err != nil {
+		panic(err)
+	}
+	temperatureArgs := args{}
+	temperatureArgs.duration = time.Millisecond * 250
+	temperatureArgs.value = make(chan string)
+	temperatureArgs.err = make(chan error)
+	go temperature.Update(quitChan, temperatureArgs.duration, temperatureArgs.value, temperatureArgs.err)
 
 	battery, err := battery.New("battery_BAT0")
 	if err != nil {
 		panic(err)
 	}
-	batteryValueChan := make(chan string)
-	batteryErrChan := make(chan error)
-	go battery.Update(quitChan, batteryValueChan, batteryErrChan)
+	batteryArgs := args{}
+	batteryArgs.duration = time.Millisecond * 250
+	batteryArgs.value = make(chan string)
+	batteryArgs.err = make(chan error)
+	go battery.Update(quitChan, batteryArgs.duration, batteryArgs.value, batteryArgs.err)
 
-	volume := pulseaudio.New()
-	volumeValueChan := make(chan string)
-	volumeErrChan := make(chan error)
-	go volume.Update(quitChan, volumeValueChan, volumeErrChan)
+	volume, err := pulseaudio.New()
+	if err != nil {
+		panic(err)
+	}
+	volumeArgs := args{}
+	volumeArgs.duration = time.Millisecond * 250
+	volumeArgs.value = make(chan string)
+	volumeArgs.err = make(chan error)
+	go volume.Update(quitChan, volumeArgs.duration, volumeArgs.value, volumeArgs.err)
 
 	for {
 		select {
-		case value := <-hostValueChan:
+		case value := <-hostArgs.value:
 			stdout.host = value
 			drift = true
-		case value := <-temperatureValueChan:
+		case err := <-hostArgs.err:
+			fmt.Println(err)
+
+		case value := <-temperatureArgs.value:
 			stdout.temperature = value
 			drift = true
-		case value := <-batteryValueChan:
+		case err := <-temperatureArgs.err:
+			fmt.Println(err)
+
+		case value := <-batteryArgs.value:
 			stdout.battery = value
 			drift = true
-		case value := <-volumeValueChan:
+		case err := <-batteryArgs.err:
+			fmt.Println(err)
+
+		case value := <-volumeArgs.value:
 			stdout.volume = value
 			drift = true
-		case err := <-hostErrChan:
+		case err := <-volumeArgs.err:
 			fmt.Println(err)
-		case err := <-temperatureErrChan:
-			fmt.Println(err)
-		case err := <-batteryErrChan:
-			fmt.Println(err)
-		case err := <-volumeErrChan:
-			fmt.Println(err)
+
 		case <-time.Tick(time.Second):
 			drift = true
 		}
 
 		// TODO: cleanup go routines before exit
 		// close(quitChan)
+		// close pa
 
 		if drift {
 			stdout.write()

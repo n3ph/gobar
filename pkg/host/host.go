@@ -19,18 +19,19 @@ func New() Host {
 	return Host{}
 }
 
-func (host *Host) Update(quitChan chan struct{}, valueChan chan string, errChan chan error) {
-	for range time.Tick(time.Millisecond * 500) {
+func (host *Host) Update(quit chan struct{}, duration time.Duration, value chan string, err chan error) {
+	for range time.Tick(duration) {
 		select {
-		case <-quitChan:
+		case <-quit:
 			return
 		default:
 			host_new := &Host{}
-			loadAvg, err := load.Avg()
-			if err != nil {
-				errChan <- err
+			loadAvg, _err := load.Avg()
+			if _err != nil {
+				err <- _err
 				return
 			}
+
 			host_new.load1 = loadAvg.Load1
 			host_new.load5 = loadAvg.Load5
 			host_new.load15 = loadAvg.Load15
@@ -39,7 +40,7 @@ func (host *Host) Update(quitChan chan struct{}, valueChan chan string, errChan 
 				host.load1 = host_new.load1
 				host.load5 = host_new.load5
 				host.load15 = host_new.load15
-				valueChan <- host.str()
+				value <- host.str()
 			}
 		}
 	}

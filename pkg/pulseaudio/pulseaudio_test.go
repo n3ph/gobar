@@ -3,19 +3,26 @@ package pulseaudio
 import (
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestNew(t *testing.T) {
 	tests := []struct {
-		name string
-		want Pulseaudio
+		name    string
+		wantPa  Pulseaudio
+		wantErr bool
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := New(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("New() = %v, want %v", got, tt.want)
+			gotPa, err := New()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotPa, tt.wantPa) {
+				t.Errorf("New() = %v, want %v", gotPa, tt.wantPa)
 			}
 		})
 	}
@@ -23,7 +30,10 @@ func TestNew(t *testing.T) {
 
 func TestPulseaudio_Update(t *testing.T) {
 	type args struct {
-		value chan string
+		quit     chan struct{}
+		duration time.Duration
+		value    chan string
+		err      chan error
 	}
 	tests := []struct {
 		name string
@@ -34,12 +44,12 @@ func TestPulseaudio_Update(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.pa.Update(tt.args.value)
+			tt.pa.Update(tt.args.quit, tt.args.duration, tt.args.value, tt.args.err)
 		})
 	}
 }
 
-func TestPulseaudio_Get(t *testing.T) {
+func TestPulseaudio_str(t *testing.T) {
 	tests := []struct {
 		name       string
 		pa         *Pulseaudio
@@ -49,8 +59,8 @@ func TestPulseaudio_Get(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotOutput := tt.pa.Get(); gotOutput != tt.wantOutput {
-				t.Errorf("Pulseaudio.Get() = %v, want %v", gotOutput, tt.wantOutput)
+			if gotOutput := tt.pa.str(); gotOutput != tt.wantOutput {
+				t.Errorf("Pulseaudio.str() = %v, want %v", gotOutput, tt.wantOutput)
 			}
 		})
 	}

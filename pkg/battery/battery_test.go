@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/omeid/upower-notify/upower"
 )
@@ -66,47 +67,53 @@ func TestUpdate(t *testing.T) {
 	}
 
 	type args struct {
-		quitChan  chan struct{}
-		valueChan chan string
-		errChan   chan error
+		quit     chan struct{}
+		duration time.Duration
+		value    chan string
+		err      chan error
 	}
 
 	battery, err := New("battery_BAT0")
 	if err != nil {
 		t.Errorf("Unable to get dbus battery object")
 	}
-	param := args{}
-	param.quitChan = make(chan struct{})
-	param.valueChan = make(chan string)
-	param.errChan = make(chan error)
+	batteryArgs := args{}
+	batteryArgs.quit = make(chan struct{})
+	batteryArgs.duration = time.Millisecond
+	batteryArgs.value = make(chan string)
+	batteryArgs.err = make(chan error)
 
 	tests := []struct {
 		name    string
 		battery *Battery
 		args    args
 	}{
-		{"goroutine", &battery, param},
+		{"goroutine", &battery, batteryArgs},
 	}
 	for _, tt := range tests {
 
 		t.Run(tt.name, func(t *testing.T) {
-			go tt.battery.Update(tt.args.quitChan, tt.args.valueChan, tt.args.errChan)
+			go tt.battery.Update(
+				tt.args.quit,
+				tt.args.duration,
+				tt.args.value,
+				tt.args.err)
 
 			loop := true
 			for loop {
 				select {
-				case err := <-tt.args.errChan:
+				case err := <-tt.args.err:
 					t.Error(err)
-				case value := <-tt.args.valueChan:
+				case value := <-tt.args.value:
 					if !(len(value) > 0) {
 						t.Errorf("Unable to retrieve battery string")
 					}
 					loop = false
 				}
 			}
-			close(tt.args.quitChan)
+			close(tt.args.quit)
 			select {
-			case _, ok := (<-tt.args.valueChan):
+			case _, ok := (<-tt.args.value):
 				if ok {
 					t.Errorf("groutine not cleaned up properly")
 				}
@@ -123,9 +130,10 @@ func BenchmarkUpdate(b *testing.B) {
 	}
 
 	type args struct {
-		quitChan  chan struct{}
-		valueChan chan string
-		errChan   chan error
+		quit     chan struct{}
+		duration time.Duration
+		value    chan string
+		err      chan error
 	}
 
 	battery, err := New("battery_BAT0")
@@ -133,16 +141,21 @@ func BenchmarkUpdate(b *testing.B) {
 		b.Errorf("Unable to get dbus battery object")
 	}
 
-	param := args{}
-	param.quitChan = make(chan struct{})
-	param.valueChan = make(chan string)
-	param.errChan = make(chan error)
+	batteryArgs := args{}
+	batteryArgs.quit = make(chan struct{})
+	batteryArgs.duration = time.Millisecond
+	batteryArgs.value = make(chan string)
+	batteryArgs.err = make(chan error)
 
 	type quit struct{}
 	quitStruct := quit{}
 	for n := 0; n < b.N; n++ {
-		go battery.Update(param.quitChan, param.valueChan, param.errChan)
-		param.quitChan <- quitStruct
+		go battery.Update(
+			batteryArgs.quit,
+			batteryArgs.duration,
+			batteryArgs.value,
+			batteryArgs.err)
+		batteryArgs.quit <- quitStruct
 	}
 }
 

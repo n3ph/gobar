@@ -17,29 +17,27 @@ type Battery struct {
 func New(device string) (battery Battery, err error) {
 	if len(device) > 0 {
 		battery.device, err = upower.New(device)
-		if err != nil {
-			return Battery{}, err
-		}
-		return battery, nil
+		return
 	}
-	return Battery{}, fmt.Errorf("BUG: device is empty string")
+	err = fmt.Errorf("BUG: device is empty string")
+	return
 }
 
-func (battery *Battery) Update(quitChan chan struct{}, valueChan chan string, errChan chan error) {
-	for range time.Tick(time.Millisecond * 250) {
+func (battery *Battery) Update(quit chan struct{}, duration time.Duration, value chan string, err chan error) {
+	for range time.Tick(duration) {
 		select {
-		case <-quitChan:
+		case <-quit:
 			return
 		default:
-			stats, err := battery.device.Get()
-			if err != nil {
-				errChan <- err
+			stats, _err := battery.device.Get()
+			if _err != nil {
+				err <- _err
 				return
 			}
 
 			if !reflect.DeepEqual(stats, battery.stats) {
 				battery.stats = stats
-				valueChan <- battery.str()
+				value <- battery.str()
 			}
 		}
 	}
