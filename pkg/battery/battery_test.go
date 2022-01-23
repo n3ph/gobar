@@ -9,22 +9,34 @@ import (
 )
 
 func TestNew(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("Skipping tests for linux based dbus/upower implementation")
+	}
+
 	type args struct {
 		device string
 	}
+
+	device := "dummyDevice"
+	dbusDevice, err := upower.New(device)
+	if err != nil {
+		t.Errorf("Unable to get dbus device object")
+	}
+
+	dbusBattery := Battery{}
+	dbusBattery.device = dbusDevice
+
 	tests := []struct {
 		name        string
 		args        args
 		wantBattery Battery
 		wantErr     bool
 	}{
-		{"emptyStr", args{device: ""}, Battery{device: &upower.UPower{}, stats: upower.Update{}}, true},
-		{"dummyDevice", args{device: "dummyDevice"}, Battery{device: &upower.UPower{}, stats: upower.Update{}}, false},
+		{"emptyStr", args{device: ""}, Battery{device: nil, stats: upower.Update{}}, true},
+		{device, args{device: device}, dbusBattery, false},
 	}
+
 	for _, tt := range tests {
-		if runtime.GOOS != "linux" {
-			t.Skip("Skipping tests for linux based upower/dbus implementation")
-		}
 		t.Run(tt.name, func(t *testing.T) {
 			gotBattery, err := New(tt.args.device)
 			if (err != nil) != tt.wantErr {
@@ -39,15 +51,19 @@ func TestNew(t *testing.T) {
 }
 
 func TestBattery_Update(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("Skipping tests for linux based upower/dbus implementation")
+	}
+
 	type args struct {
 		quitChan  chan struct{}
 		valueChan chan string
 		errChan   chan error
 	}
 
-	battery, err := New("dummy")
+	battery, err := New("battery_BAT0")
 	if err != nil {
-		t.Errorf("nonoo")
+		t.Errorf("Unable to get debus battery object")
 	}
 	param := args{}
 	param.quitChan = make(chan struct{})
@@ -59,21 +75,35 @@ func TestBattery_Update(t *testing.T) {
 		battery *Battery
 		args    args
 	}{
-		{"dummy123", &battery, param},
+		{"goroutine", &battery, param},
 	}
 	for _, tt := range tests {
-		if runtime.GOOS != "linux" {
-			t.Skip("Skipping tests for linux based upower/dbus implementation")
-		}
+
 		t.Run(tt.name, func(t *testing.T) {
 			go tt.battery.Update(tt.args.quitChan, tt.args.valueChan, tt.args.errChan)
-		})
 
-		select {
-		case err := <-tt.args.errChan:
-			t.Error(err)
-		}
-		close(tt.args.quitChan)
+			loop := true
+			for loop {
+				select {
+				case err := <-tt.args.errChan:
+					t.Error(err)
+				case value := <-tt.args.valueChan:
+					if !(len(value) > 0) {
+						t.Errorf("Unable to retrieve battery string")
+					}
+					loop = false
+				}
+			}
+			close(tt.args.quitChan)
+			select {
+			case _, ok := (<-tt.args.valueChan):
+				if ok {
+					t.Errorf("groutine not cleaned up properly")
+				}
+				break
+			default:
+			}
+		})
 	}
 }
 
@@ -83,7 +113,7 @@ func TestBattery_str(t *testing.T) {
 		battery *Battery
 		want    string
 	}{
-		// TODO: Add test cases.
+		{"emptyStr", &Battery{}, "❓ 0%"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
