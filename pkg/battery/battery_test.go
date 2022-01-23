@@ -50,6 +50,16 @@ func TestNew(t *testing.T) {
 	}
 }
 
+func BenchmarkTest(b *testing.B) {
+	if runtime.GOOS != "linux" {
+		b.Skip("Skipping tests for linux based dbus/upower implementation")
+	}
+
+	for n := 0; n < b.N; n++ {
+		New("dummyDevice")
+	}
+}
+
 func TestBattery_Update(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("Skipping tests for linux based upower/dbus implementation")
@@ -63,7 +73,7 @@ func TestBattery_Update(t *testing.T) {
 
 	battery, err := New("battery_BAT0")
 	if err != nil {
-		t.Errorf("Unable to get debus battery object")
+		t.Errorf("Unable to get dbus battery object")
 	}
 	param := args{}
 	param.quitChan = make(chan struct{})
@@ -107,6 +117,35 @@ func TestBattery_Update(t *testing.T) {
 	}
 }
 
+func BenchmarkBattery_Update(b *testing.B) {
+	if runtime.GOOS != "linux" {
+		b.Skip("Skipping tests for linux based dbus/upower implementation")
+	}
+
+	type args struct {
+		quitChan  chan struct{}
+		valueChan chan string
+		errChan   chan error
+	}
+
+	battery, err := New("battery_BAT0")
+	if err != nil {
+		b.Errorf("Unable to get dbus battery object")
+	}
+
+	param := args{}
+	param.quitChan = make(chan struct{})
+	param.valueChan = make(chan string)
+	param.errChan = make(chan error)
+
+	type quit struct{}
+	quitStruct := quit{}
+	for n := 0; n < b.N; n++ {
+		go battery.Update(param.quitChan, param.valueChan, param.errChan)
+		param.quitChan <- quitStruct
+	}
+}
+
 func TestBattery_str(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -121,5 +160,20 @@ func TestBattery_str(t *testing.T) {
 				t.Errorf("Battery.str() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func BenchmarkBattery_str(b *testing.B) {
+	if runtime.GOOS != "linux" {
+		b.Skip("Skipping tests for linux based dbus/upower implementation")
+	}
+
+	battery, err := New("dummyDevice")
+	if err != nil {
+		b.Errorf("Unable to get dbus battery object")
+	}
+
+	for n := 0; n < b.N; n++ {
+		_ = battery.str()
 	}
 }
