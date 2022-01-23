@@ -32,7 +32,7 @@ func TestNew(t *testing.T) {
 		wantBattery Battery
 		wantErr     bool
 	}{
-		{"emptyStr", args{device: ""}, Battery{device: nil, stats: upower.Update{}}, true},
+		{"empty", args{device: ""}, Battery{device: nil, stats: upower.Update{}}, true},
 		{device, args{device: device}, dbusBattery, false},
 	}
 
@@ -50,7 +50,7 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func BenchmarkTest(b *testing.B) {
+func BenchmarkNew(b *testing.B) {
 	if runtime.GOOS != "linux" {
 		b.Skip("Skipping tests for linux based dbus/upower implementation")
 	}
@@ -60,7 +60,7 @@ func BenchmarkTest(b *testing.B) {
 	}
 }
 
-func TestBattery_Update(t *testing.T) {
+func TestUpdate(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("Skipping tests for linux based upower/dbus implementation")
 	}
@@ -117,7 +117,7 @@ func TestBattery_Update(t *testing.T) {
 	}
 }
 
-func BenchmarkBattery_Update(b *testing.B) {
+func BenchmarkUpdate(b *testing.B) {
 	if runtime.GOOS != "linux" {
 		b.Skip("Skipping tests for linux based dbus/upower implementation")
 	}
@@ -146,7 +146,7 @@ func BenchmarkBattery_Update(b *testing.B) {
 	}
 }
 
-func TestBattery_str(t *testing.T) {
+func TestStr(t *testing.T) {
 	tests := []struct {
 		name    string
 		battery *Battery
@@ -163,7 +163,7 @@ func TestBattery_str(t *testing.T) {
 	}
 }
 
-func BenchmarkBattery_str(b *testing.B) {
+func BenchmarkStr(b *testing.B) {
 	if runtime.GOOS != "linux" {
 		b.Skip("Skipping tests for linux based dbus/upower implementation")
 	}
