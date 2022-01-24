@@ -77,8 +77,6 @@ func (pa *Pulseaudio) str() (output string) {
 		volumeIcon = "🔊"
 	}
 
-	fmt.Println(pa.level)
-
 	if pa.mute {
 		volumeIcon = "🔇"
 	}
