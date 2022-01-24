@@ -14,9 +14,16 @@ type Temperature struct {
 }
 
 func New(device string) (temperature Temperature, err error) {
-	sensors, err := host.SensorsTemperatures()
+
+	if !(len(device) > 0) {
+		err = fmt.Errorf("BUG: device is empty string")
+		return
+	}
+
+	var sensors []host.TemperatureStat
+	sensors, err = host.SensorsTemperatures()
 	if err != nil {
-		return Temperature{}, err
+		return
 	}
 
 	for _, sensor := range sensors {
@@ -25,6 +32,7 @@ func New(device string) (temperature Temperature, err error) {
 			return
 		}
 	}
+
 	err = fmt.Errorf("get temperature stats: device not found: %s", device)
 	return
 }

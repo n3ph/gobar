@@ -2,17 +2,32 @@ package pulseaudio
 
 import (
 	"reflect"
+	"runtime"
 	"testing"
 	"time"
+
+	"github.com/lawl/pulseaudio"
 )
 
 func TestNew(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("Skipping tests for linux based dbus/upower implementation")
+	}
+
+	client, err := pulseaudio.NewClient()
+	if err != nil {
+		t.Errorf("Failed to build pulseaudio client: %s", err)
+	}
+
+	pa := Pulseaudio{}
+	pa.client = client
+
 	tests := []struct {
 		name    string
 		wantPa  Pulseaudio
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{"generic", pa, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -53,11 +53,7 @@ func TestUpdate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			go tt.host.Update(
-				tt.args.quit,
-				tt.args.duration,
-				tt.args.value,
-				tt.args.err)
+			go tt.host.Update(tt.args.quit, tt.args.duration, tt.args.value, tt.args.err)
 
 			loop := true
 			for loop {
@@ -102,11 +98,7 @@ func BenchmarkUpdate(b *testing.B) {
 	type quit struct{}
 	_quit := quit{}
 	for n := 0; n < b.N; n++ {
-		go host.Update(
-			hostArgs.quit,
-			hostArgs.duration,
-			hostArgs.value,
-			hostArgs.err)
+		go host.Update(hostArgs.quit, hostArgs.duration, hostArgs.value, hostArgs.err)
 		hostArgs.quit <- _quit
 	}
 }

@@ -15,11 +15,22 @@ type Battery struct {
 }
 
 func New(device string) (battery Battery, err error) {
-	if len(device) > 0 {
-		battery.device, err = upower.New(device)
+	if !(len(device) > 0) {
+		err = fmt.Errorf("BUG: device is empty string")
 		return
 	}
-	err = fmt.Errorf("BUG: device is empty string")
+
+	upowerDevice, err := upower.New(device)
+	if err != nil {
+		return
+	}
+
+	_, err = upowerDevice.Get()
+	if err != nil {
+		return
+	}
+
+	battery.device = upowerDevice
 	return
 }
 

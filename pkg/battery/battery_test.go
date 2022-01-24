@@ -18,15 +18,6 @@ func TestNew(t *testing.T) {
 		device string
 	}
 
-	device := "dummyDevice"
-	dbusDevice, err := upower.New(device)
-	if err != nil {
-		t.Errorf("Unable to get dbus device object")
-	}
-
-	dbusBattery := Battery{}
-	dbusBattery.device = dbusDevice
-
 	tests := []struct {
 		name        string
 		args        args
@@ -34,7 +25,7 @@ func TestNew(t *testing.T) {
 		wantErr     bool
 	}{
 		{"empty", args{device: ""}, Battery{device: nil, stats: upower.Update{}}, true},
-		{device, args{device: device}, dbusBattery, false},
+		{"unknown", args{device: "unknown"}, Battery{device: nil, stats: upower.Update{}}, true},
 	}
 
 	for _, tt := range tests {
@@ -75,7 +66,7 @@ func TestUpdate(t *testing.T) {
 
 	battery, err := New("battery_BAT0")
 	if err != nil {
-		t.Errorf("Unable to get dbus battery object")
+		t.Errorf("Unable to get dbus battery object: %s", err)
 	}
 	batteryArgs := args{}
 	batteryArgs.quit = make(chan struct{})
@@ -93,11 +84,7 @@ func TestUpdate(t *testing.T) {
 	for _, tt := range tests {
 
 		t.Run(tt.name, func(t *testing.T) {
-			go tt.battery.Update(
-				tt.args.quit,
-				tt.args.duration,
-				tt.args.value,
-				tt.args.err)
+			go tt.battery.Update(tt.args.quit, tt.args.duration, tt.args.value, tt.args.err)
 
 			loop := true
 			for loop {
@@ -138,7 +125,7 @@ func BenchmarkUpdate(b *testing.B) {
 
 	battery, err := New("battery_BAT0")
 	if err != nil {
-		b.Errorf("Unable to get dbus battery object")
+		b.Errorf("Unable to get dbus battery object %s", err)
 	}
 
 	batteryArgs := args{}
@@ -150,11 +137,7 @@ func BenchmarkUpdate(b *testing.B) {
 	type quit struct{}
 	quitStruct := quit{}
 	for n := 0; n < b.N; n++ {
-		go battery.Update(
-			batteryArgs.quit,
-			batteryArgs.duration,
-			batteryArgs.value,
-			batteryArgs.err)
+		go battery.Update(batteryArgs.quit, batteryArgs.duration, batteryArgs.value, batteryArgs.err)
 		batteryArgs.quit <- quitStruct
 	}
 }
@@ -181,9 +164,9 @@ func BenchmarkStr(b *testing.B) {
 		b.Skip("Skipping tests for linux based dbus/upower implementation")
 	}
 
-	battery, err := New("dummyDevice")
+	battery, err := New("battery_BAT0")
 	if err != nil {
-		b.Errorf("Unable to get dbus battery object")
+		b.Errorf("Unable to get dbus battery object: %s", err)
 	}
 
 	for n := 0; n < b.N; n++ {
