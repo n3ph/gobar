@@ -43,42 +43,45 @@ func Gobar() {
 	var drift bool
 	quitChan := make(chan struct{})
 
-	host := host.New()
 	hostArgs := args{}
 	hostArgs.duration = time.Millisecond * 250
 	hostArgs.value = make(chan string)
 	hostArgs.err = make(chan error)
+	host := host.New()
 	go host.Update(quitChan, hostArgs.duration, hostArgs.value, hostArgs.err)
 
-	temperature, err := temperature.New("amdgpu_edge_input")
-	if err != nil {
-		panic(err)
-	}
 	temperatureArgs := args{}
 	temperatureArgs.duration = time.Millisecond * 250
 	temperatureArgs.value = make(chan string)
 	temperatureArgs.err = make(chan error)
-	go temperature.Update(quitChan, temperatureArgs.duration, temperatureArgs.value, temperatureArgs.err)
-
-	battery, err := battery.New("battery_BAT0")
+	temperature, err := temperature.New("amdgpu_edge_input")
 	if err != nil {
-		panic(err)
+		fmt.Println("Error: ", err)
+	} else {
+		go temperature.Update(quitChan, temperatureArgs.duration, temperatureArgs.value, temperatureArgs.err)
 	}
+
 	batteryArgs := args{}
 	batteryArgs.duration = time.Millisecond * 250
 	batteryArgs.value = make(chan string)
 	batteryArgs.err = make(chan error)
-	go battery.Update(quitChan, batteryArgs.duration, batteryArgs.value, batteryArgs.err)
-
-	volume, err := pulseaudio.New()
+	battery, err := battery.New("battery_BAT0")
 	if err != nil {
-		panic(err)
+		fmt.Println("Error: ", err)
+	} else {
+		go battery.Update(quitChan, batteryArgs.duration, batteryArgs.value, batteryArgs.err)
 	}
+
 	volumeArgs := args{}
 	volumeArgs.duration = time.Millisecond * 250
 	volumeArgs.value = make(chan string)
 	volumeArgs.err = make(chan error)
-	go volume.Update(quitChan, volumeArgs.duration, volumeArgs.value, volumeArgs.err)
+	volume, err := pulseaudio.New()
+	if err != nil {
+		fmt.Println("Error: ", err)
+	} else {
+		go volume.Update(quitChan, volumeArgs.duration, volumeArgs.value, volumeArgs.err)
+	}
 
 	for {
 		select {

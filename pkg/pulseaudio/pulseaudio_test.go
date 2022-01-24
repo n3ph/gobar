@@ -11,7 +11,7 @@ import (
 
 func TestNew(t *testing.T) {
 	if runtime.GOOS != "linux" {
-		t.Skip("Skipping tests for linux based dbus/upower implementation")
+		t.Skip("Skipping tests for linux based pulseaudio implementation")
 	}
 
 	client, err := pulseaudio.NewClient()

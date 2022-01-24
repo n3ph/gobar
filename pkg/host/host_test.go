@@ -2,7 +2,6 @@ package host
 
 import (
 	"reflect"
-	"runtime"
 	"testing"
 	"time"
 )
@@ -122,10 +121,6 @@ func TestStr(t *testing.T) {
 }
 
 func BenchmarkStr(b *testing.B) {
-	if runtime.GOOS != "linux" {
-		b.Skip("Skipping tests for linux based dbus/upower implementation")
-	}
-
 	host := New()
 	for n := 0; n < b.N; n++ {
 		_ = host.str()
