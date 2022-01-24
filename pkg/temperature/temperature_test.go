@@ -50,9 +50,22 @@ func TestUpdate(t *testing.T) {
 		err      chan error
 	}
 
-	temperature, err := New("amdgpu_edge_input")
+	var err error
+	var sensors []host.TemperatureStat
+	sensors, err = host.SensorsTemperatures()
 	if err != nil {
-		t.Errorf("Unable to host temperature object: %s", err)
+		t.Errorf("Unable to get sensor objects: %s", err)
+	}
+
+	var temperature Temperature
+	if len(sensors) > 0 {
+		last := len(sensors) - 1
+		temperature, err = New(sensors[last].SensorKey)
+		if err != nil {
+			t.Errorf("Unable to get host temperature object: %s", err)
+		}
+	} else {
+		t.Error("Unable to get host temperature object: none avail")
 	}
 
 	temperatureArgs := args{}
@@ -105,9 +118,22 @@ func BenchmarkUpdate(b *testing.B) {
 		err      chan error
 	}
 
-	temperature, err := New("amdgpu_edge_input")
+	var err error
+	var sensors []host.TemperatureStat
+	sensors, err = host.SensorsTemperatures()
 	if err != nil {
-		b.Errorf("Unable to host temperature object: %s", err)
+		b.Errorf("Unable to get sensor objects: %s", err)
+	}
+
+	var temperature Temperature
+	if len(sensors) > 0 {
+		last := len(sensors) - 1
+		temperature, err = New(sensors[last].SensorKey)
+		if err != nil {
+			b.Errorf("Unable to get host temperature object: %s", err)
+		}
+	} else {
+		b.Error("Unable to get host temperature object: none avail")
 	}
 
 	temperatureArgs := args{}
@@ -142,12 +168,25 @@ func TestStr(t *testing.T) {
 }
 
 func BenchmarkStr(b *testing.B) {
-	temperature, err := New("amdgpu_edge_input")
+	var err error
+	var sensors []host.TemperatureStat
+	sensors, err = host.SensorsTemperatures()
 	if err != nil {
-		b.Errorf("Unable to host temperature object: %s", err)
+		b.Errorf("Unable to get sensor objects: %s", err)
+	}
+
+	var temperature Temperature
+	if len(sensors) > 0 {
+		last := len(sensors) - 1
+		temperature, err = New(sensors[last].SensorKey)
+		if err != nil {
+			b.Errorf("Unable to get host temperature object: %s", err)
+		}
+	} else {
+		b.Error("Unable to get host temperature object: none avail")
 	}
 
 	for n := 0; n < b.N; n++ {
-		_ = temperature.str()
+		temperature.str()
 	}
 }
