@@ -65,6 +65,7 @@ func TestUpdate(t *testing.T) {
 					}
 					loop = false
 				}
+
 			}
 			close(tt.args.quit)
 			select {
