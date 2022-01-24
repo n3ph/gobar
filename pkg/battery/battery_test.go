@@ -54,7 +54,7 @@ func BenchmarkNew(b *testing.B) {
 
 func TestUpdate(t *testing.T) {
 	if runtime.GOOS != "linux" {
-		t.Skip("Skipping tests for linux based upower/dbus implementation")
+		t.Skip("Skipping tests for linux based dbus/upower implementation")
 	}
 
 	type args struct {
