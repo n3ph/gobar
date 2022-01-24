@@ -18,7 +18,6 @@ type Elements struct {
 	battery     string
 	host        string
 	temperature string
-	timestamp   string
 	volume      string
 }
 
@@ -115,7 +114,7 @@ func Gobar() {
 
 		// TODO: cleanup go routines before exit
 		// close(quitChan)
-		// close pa
+		// close pa.client
 
 		if drift {
 			stdout.write()
