@@ -65,7 +65,6 @@ func TestUpdate(t *testing.T) {
 					}
 					loop = false
 				}
-
 			}
 			close(tt.args.quit)
 			select {
@@ -124,6 +123,6 @@ func TestStr(t *testing.T) {
 func BenchmarkStr(b *testing.B) {
 	host := New()
 	for n := 0; n < b.N; n++ {
-		_ = host.str()
+		host.str()
 	}
 }
