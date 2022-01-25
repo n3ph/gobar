@@ -37,8 +37,26 @@ func TestNew(t *testing.T) {
 }
 
 func BenchmarkNew(b *testing.B) {
+	var err error
+	var sensors []host.TemperatureStat
+	sensors, err = host.SensorsTemperatures()
+	if err != nil {
+		b.Errorf("Unable to get sensor objects: %s", err)
+	}
+
+	var sensor string
+	if len(sensors) > 0 {
+		last := len(sensors) - 1
+		sensor = sensors[last].SensorKey
+	} else {
+		b.Error("Unable to get host temperature object: none avail")
+	}
+
 	for n := 0; n < b.N; n++ {
-		New("amdgpu_edge_input")
+		_, err := New(sensor)
+		if err != nil {
+			b.Errorf("Unable to get host temperature object: %s", err)
+		}
 	}
 }
 
