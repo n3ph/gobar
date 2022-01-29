@@ -27,8 +27,10 @@ func New() (pa Pulseaudio, err error) {
 }
 
 func (pa *Pulseaudio) Update(quit chan struct{}, duration time.Duration, value chan string, err chan error) {
+	ticker := time.NewTicker(duration)
+	defer ticker.Stop()
 
-	for range time.Tick(time.Millisecond * 250) {
+	for range ticker.C {
 		select {
 		case <-quit:
 			pa.client.Close()
