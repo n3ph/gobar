@@ -20,7 +20,10 @@ func New() Host {
 }
 
 func (host *Host) Update(quit chan struct{}, duration time.Duration, value chan string, err chan error) {
-	for range time.Tick(duration) {
+	ticker := time.NewTicker(duration)
+	defer ticker.Stop()
+
+	for range ticker.C {
 		select {
 		case <-quit:
 			return
