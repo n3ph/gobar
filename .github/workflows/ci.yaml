@@ -16,11 +16,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: cancel previous
-      uses: styfle/cancel-workflow-action@a40b8845c0683271d9f53dfcb887a7e181d3918b #0.9.1
-      with:
-        access_token: ${{ github.token }}
-
     - name: checkout
     - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 #2.4.0
     
