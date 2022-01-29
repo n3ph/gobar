@@ -92,7 +92,7 @@ func Gobar() {
 		case <-sigs:
 			close(quitChan)
 			ticker.Stop()
-			os.Exit(0)
+			return
 
 		case value := <-hostArgs.value:
 			stdout.host = value
