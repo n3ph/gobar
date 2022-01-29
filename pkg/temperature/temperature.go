@@ -37,7 +37,7 @@ func New(device string) (temperature Temperature, err error) {
 	return
 }
 
-func (temperature *Temperature) Update(quit chan struct{}, duration time.Duration, value chan string, err chan error) {
+func (temperature *Temperature) Update(quit chan struct{}, duration time.Duration, value chan string) {
 	ticker := time.NewTicker(duration)
 	defer ticker.Stop()
 
