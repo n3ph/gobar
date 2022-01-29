@@ -57,5 +57,5 @@ jobs:
         external-data-json-path: ./cache/benchmark-data.json
         fail-on-alert: true
 
-    - name: Run build
+    - name: run build
       run: go build cmd
