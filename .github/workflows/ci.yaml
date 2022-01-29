@@ -41,7 +41,7 @@ jobs:
       uses: codecov/codecov-action@f32b3a3741e1053eb607407145bc9619351dc93b #v2.1.0
 
     - name: benchmark
-      run: go test -bench=. 'BenchmarkFib' | tee output.txt
+      run: go test -bench=. | tee output.txt
 
     - name: download previous benchmark data
       uses: actions/cache@937d24475381cd9c75ae6db12cb4e79714b926ed #2.1.7
