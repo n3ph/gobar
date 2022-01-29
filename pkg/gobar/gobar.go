@@ -47,7 +47,7 @@ func Gobar() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	ticker := time.NewTicker(time.Second))
+	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	hostArgs := args{}
