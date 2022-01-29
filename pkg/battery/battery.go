@@ -61,7 +61,7 @@ func (battery *Battery) str() string {
 	batteryStr := fmt.Sprintf("%.f", battery.stats.Percentage) + "%"
 
 	var batteryIcon, batteryStatusIcon string
-	if battery.stats.Percentage < 0.3 {
+	if battery.stats.Percentage < 30 {
 		batteryIcon = "🪫"
 	} else {
 		batteryIcon = "🔋"
