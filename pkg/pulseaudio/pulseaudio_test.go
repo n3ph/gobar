@@ -14,7 +14,7 @@ func TestNew(t *testing.T) {
 
 	client, err := pulseaudio.NewClient()
 	if err != nil {
-		t.Errorf("Failed to build pulseaudio client: %s", err)
+		t.Skipf("Failed to build pulseaudio client: %s", err)
 	}
 
 	pa := Pulseaudio{}
