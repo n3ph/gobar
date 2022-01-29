@@ -58,12 +58,11 @@ func Gobar() {
 	temperatureArgs := args{}
 	temperatureArgs.duration = time.Millisecond * 250
 	temperatureArgs.value = make(chan string)
-	temperatureArgs.err = make(chan error)
 	temperature, err := temperature.New("amdgpu_edge_input")
 	if err != nil {
 		fmt.Println("Error: ", err)
 	} else {
-		go temperature.Update(quitChan, temperatureArgs.duration, temperatureArgs.value, temperatureArgs.err)
+		go temperature.Update(quitChan, temperatureArgs.duration, temperatureArgs.value)
 	}
 
 	batteryArgs := args{}
