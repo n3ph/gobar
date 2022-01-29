@@ -46,9 +46,7 @@ func Gobar() {
 	quitChan := make(chan struct{})
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
 	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
 
 	hostArgs := args{}
 	hostArgs.duration = time.Millisecond * 250
@@ -94,6 +92,7 @@ func Gobar() {
 		select {
 		case <-sigs:
 			close(quitChan)
+			ticker.Stop()
 			os.Exit(0)
 
 		case value := <-hostArgs.value:
