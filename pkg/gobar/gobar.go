@@ -47,6 +47,9 @@ func Gobar() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
+	ticker := time.NewTicker(time.Second))
+	defer ticker.Stop()
+
 	hostArgs := args{}
 	hostArgs.duration = time.Millisecond * 250
 	hostArgs.value = make(chan string)
@@ -117,7 +120,7 @@ func Gobar() {
 		case err := <-paArgs.err:
 			fmt.Println(err)
 
-		case <-time.Tick(time.Second):
+		case <-ticker.C:
 			drift = true
 		}
 
